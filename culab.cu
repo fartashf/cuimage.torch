@@ -39,9 +39,12 @@ __global__ void rgb2lab(const int nthreads, const Dtype* rgb, const int num,
         int offset = (n*channels*rows + y)*cols + x;
         int step = rows*cols;
         // get RGB
-        r = culab_gamma_expand_sRGB(rgb[offset + 0*step]);
-        g = culab_gamma_expand_sRGB(rgb[offset + 1*step]);
-        b = culab_gamma_expand_sRGB(rgb[offset + 2*step]);
+        // r = culab_gamma_expand_sRGB(rgb[offset + 0*step]);
+        // g = culab_gamma_expand_sRGB(rgb[offset + 1*step]);
+        // b = culab_gamma_expand_sRGB(rgb[offset + 2*step]);
+        r = rgb[offset + 0*step];
+        g = rgb[offset + 1*step];
+        b = rgb[offset + 2*step];
 
         // sRGB to XYZ
         double X = 0.412453 * r + 0.357580 * g + 0.180423 * b;
