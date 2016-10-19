@@ -1,5 +1,5 @@
 require 'cutorch'
 require 'nn'
-culab = {}
+cuimage = {}
 include 'ffi.lua'
-include 'culab.lua'
+include 'cuimage.lua'

@@ -1,11 +1,11 @@
-#include "culab.h"
+#include "cuimage.h"
 #include "common.h"
 
 /*
  * Convert an sRGB color channel to a linear sRGB color channel.
  */
 template <typename Dtype>
-__host__ __device__ static inline Dtype culab_gamma_expand_sRGB(Dtype nonlinear)
+__host__ __device__ static inline Dtype cuimage_gamma_expand_sRGB(Dtype nonlinear)
 {
   return (nonlinear <= 0.04045) ? (nonlinear / 12.92)
                                 : (pow((nonlinear+0.055)/1.055, 2.4));
@@ -15,7 +15,7 @@ __host__ __device__ static inline Dtype culab_gamma_expand_sRGB(Dtype nonlinear)
  * Convert a linear sRGB color channel to a sRGB color channel.
  */
 template <typename Dtype>
-__host__ __device__ static inline Dtype culab_gamma_compress_sRGB(Dtype linear)
+__host__ __device__ static inline Dtype cuimage_gamma_compress_sRGB(Dtype linear)
 {
   return (linear <= 0.0031308) ? (12.92 * linear)
                                : (1.055 * pow(linear, 1.0/2.4) - 0.055);
@@ -23,7 +23,8 @@ __host__ __device__ static inline Dtype culab_gamma_compress_sRGB(Dtype linear)
 
 template <typename Dtype>
 __global__ void rgb2lab(const int nthreads, const Dtype* rgb, const int num,
-        const int channels, const int rows, const int cols, Dtype* lab){
+        const int channels, const int rows, const int cols, Dtype* lab,
+        const bool do_gamma_expand){
     // CIE Standard
     double epsilon = 216.0/24389.0;
     double k = 24389.0/27.0;
@@ -39,12 +40,15 @@ __global__ void rgb2lab(const int nthreads, const Dtype* rgb, const int num,
         int offset = (n*channels*rows + y)*cols + x;
         int step = rows*cols;
         // get RGB
-        // r = culab_gamma_expand_sRGB(rgb[offset + 0*step]);
-        // g = culab_gamma_expand_sRGB(rgb[offset + 1*step]);
-        // b = culab_gamma_expand_sRGB(rgb[offset + 2*step]);
-        r = rgb[offset + 0*step];
-        g = rgb[offset + 1*step];
-        b = rgb[offset + 2*step];
+        if (do_gamma_expand) {
+            r = cuimage_gamma_expand_sRGB(rgb[offset + 0*step]);
+            g = cuimage_gamma_expand_sRGB(rgb[offset + 1*step]);
+            b = cuimage_gamma_expand_sRGB(rgb[offset + 2*step]);
+        } else {
+            r = rgb[offset + 0*step];
+            g = rgb[offset + 1*step];
+            b = rgb[offset + 2*step];
+        }
 
         // sRGB to XYZ
         double X = 0.412453 * r + 0.357580 * g + 0.180423 * b;
@@ -76,7 +80,8 @@ __global__ void rgb2lab(const int nthreads, const Dtype* rgb, const int num,
  * Assumes r, g, and b are contained in the set [0, 1].
  * LAB output is NOT restricted to [0, 1]!
  */
-void culab_rgb2lab(THCState *state, THCudaTensor *input, THCudaTensor *output) {
+void cuimage_rgb2lab(THCState *state, THCudaTensor *input, THCudaTensor
+        *output, const bool do_gamma_expand) {
     THCUNN_assertSameGPU(state, 2, input, output);
     THArgCheck(input->nDimension == 3 || input->nDimension == 4, 2,
             "3D or 4D (batch) tensor expected");
@@ -108,7 +113,7 @@ void culab_rgb2lab(THCState *state, THCudaTensor *input, THCudaTensor *output) {
             THCState_getCurrentStream(state) >>>
                 (count, input_data, batchSize,
                  nInputPlane, nInputRows, nInputCols,
-                 output_data);
+                 output_data, do_gamma_expand);
     THCudaCheck(cudaGetLastError());
 
     if(input->nDimension == 3)

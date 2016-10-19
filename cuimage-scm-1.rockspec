@@ -1,23 +1,24 @@
-package = "culab"
+package = "cuimage"
 version = "scm-1"
 
 source = {
-   url = "git://github.com/fartashf/culab.torch",
+   url = "git://github.com/fartashf/cuimage.torch",
    tag = "master"
 }
 
 description = {
-   summary = "A Cuda implementation of image.rgb2lab",
+   summary = "A Cuda implementation of image package",
    detailed = [[
-   	    A Cuda implementation of image.rgb2lab
+   	    A Cuda implementation of some functions in the image package
    ]],
-   homepage = "https://github.com/fartashf/culab.torch",
+   homepage = "https://github.com/fartashf/cuimage.torch",
    license = "BSD"
 }
 
 dependencies = {
    "torch >= 7.0",
-   "cutorch >= 1.0"
+   "cutorch >= 1.0",
+   "nn >= 1.0",
 }
 
 build = {
