@@ -126,5 +126,5 @@ void cuimage_scaleBilinear(THCState *state, THCudaTensor *input,
                 nOutputCols);
 
     THCudaTensor_free(state, input);
-    THCudaTensor_free(state, tmp);
+    // THCudaTensor_free(state, tmp);
 }
